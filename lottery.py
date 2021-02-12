@@ -1,26 +1,12 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
-# fix long autocomplete in jupyter notebook
-get_ipython().run_line_magic('config', 'Completer.use_jedi = False')
-
-
-# In[2]:
-
-
 import os
 import xlwt
 import pandas as pd
 from datetime import datetime
 from random import sample
 from pathlib import Path
-
-
-# In[3]:
-
 
 forms_dir = Path('../2020-02-11_handout/')
 result_dir = forms_dir
@@ -29,9 +15,7 @@ TC_filename           = r'SE T&C Form.csv'
 applications_filename = r'SE Application Form.csv'
 inventory_filename    = r'SE Inventory - Inventory.csv'
 
-
-# In[4]:
-
+#%%
 
 # build all the paths to the input and output files
 result_filename = '{}_handout.xls'.format(datetime.strftime(datetime.today(), '%Y-%m-%d'))
@@ -50,9 +34,7 @@ for path in [TC_path, inventory_path, applications_path]:
 if not os.path.isdir(result_path.parent):
     os.mkdir(result_path.parent)
 
-
-# In[5]:
-
+# %%
 
 # read the files
 applications = pd.read_csv(applications_path,
@@ -62,9 +44,7 @@ applications = pd.read_csv(applications_path,
 tc_form = pd.read_csv(TC_path, usecols=['Name', 'E-Mail'])
 inventory = pd.read_csv(inventory_path)
 
-
-# In[6]:
-
+#%%
 
 # get indices, where inventory of the containers start and ent
 start_sk_inventory = inventory.index[inventory['Name'] == 'Sjoeskrenten Container:'].to_list()[0]
@@ -82,9 +62,7 @@ ss_inventory = ss_inventory.shift(2)
 sk_inventory.dropna(subset=['Name'], inplace=True)
 ss_inventory.dropna(subset=['Name'], inplace=True)
 
-
-# In[7]:
-
+#%%
 
 # drop duplicates in applications
 # search for duplicates in Name and Username sepereately, with both in a list it will only find duplicates with both
@@ -95,14 +73,13 @@ applications.drop_duplicates('Username', keep='last', inplace=True)
 applications.rename(columns={'Equipment Sjoeskrenten':'SK', 'Equipment Ski/Snowscooter':'SS'}, inplace=True)
 
 
-# In[8]:
+#%%
 
 
 #ToDO: kick out people who did not sign T&C and who are behind deadline
 
 
-# In[9]:
-
+#%%
 
 # loop through applications and put the items on 'want list' and put in, who wants them
 want_dict_sk = {}
@@ -150,9 +127,7 @@ for _, person in applications.iterrows():
                 want_dict_ss[item] = [person['Name']]
 
 
-# In[10]:
-
-
+#%%
 # check demand of every item, and if neccessary, do the lottery
 
 # SK container
@@ -167,9 +142,7 @@ for item, applicants in want_dict_sk.items():
     else:
         won_dict_sk[item] = applicants
 
-
-# In[11]:
-
+#%%
 
 # pay special attention to the skis and boots and poles
 # do the lottery for skis only. Everybody who gets skis, will get boots
@@ -204,8 +177,7 @@ for ski, people in won_dict_ski_readable.items():
     item = ski_indices[ski][0]
     won_dict_ski[item] = people
 
-
-# In[12]:
+#%%
 
 
 # Lottery on boots is kind of useless. When people got skis, they just have to find some boots that fit.
@@ -213,8 +185,7 @@ for ski, people in won_dict_ski_readable.items():
 # rather do the lottery on skins
 
 
-# In[13]:
-
+#%%
 
 # boots only for people who got skis
 boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots')
@@ -247,8 +218,7 @@ for ski, people in won_dict_ski_readable.items():
                 won_dict_boots[item] = won
             else:
                 won_dict_boots[item] = applicants
-# In[14]:
-
+#%%
 
 # delete skis and boots from want list snow scooter to not do the lottery on them again
 
@@ -264,8 +234,7 @@ for index in indices_to_delete:
         del want_dict_ss[index]
 
 
-# In[15]:
-
+#%%
 
 # Lottery for the rest of the container
 # check demand of every item, and if neccessary, do the lottery
@@ -283,8 +252,7 @@ for item, applicants in want_dict_ss.items():
         won_dict_ss[item] = applicants
 
 
-# In[16]:
-
+#%%
 
 # now go through all the winner lists and gather the items one person has won
 winner_sk = {}
@@ -308,8 +276,7 @@ for _dict in [won_dict_ss, won_dict_boots, won_dict_ski]:
                 winner_ss[person] = [item]
 
 
-# In[17]:
-
+#%%
 
 # use item names instead of numbers
 winner_sk_readable = {}
@@ -323,9 +290,8 @@ for winner, item in winner_ss.items():
     winner_ss_readable[winner] = names
 
 
-# In[18]:
-
-
+#%%
+    
 # sort winner alphabeticaly
 sorted_sk = {}
 for name, items in sorted(winner_sk_readable.items()):
@@ -335,9 +301,7 @@ sorted_ss = {}
 for name, items in sorted(winner_ss_readable.items()):
     sorted_ss[name] = items
 
-
-# In[19]:
-
+#%%
 
 # write everything to an excel sheet
 
@@ -391,8 +355,7 @@ for sheet, result, header in zip([sheet_sk, sheet_ss], [sorted_sk, sorted_ss], [
 wb.save(result_path)
 
 
-# In[20]:
-
+#%%
 
 print('Written results to {}'.format(result_path))
 print('Done.')
