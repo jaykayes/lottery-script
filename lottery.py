@@ -1,21 +1,46 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+# In[ ]:
+
+
+# fix long autocomplete in jupyter notebook
+get_ipython().run_line_magic('config', 'Completer.use_jedi = False')
+
+
+# In[2]:
+
+
 import os
 import xlwt
+import pickle
 import pandas as pd
 from datetime import datetime
-from random import sample
+from random import sample, shuffle
 from pathlib import Path
 
-forms_dir = Path('../2020-02-11_handout/')
+
+# In[3]:
+
+
+forms_dir = Path('/home/max/Downloads/SE_forms')
 result_dir = forms_dir
+
+deadline = '2021-02-24 16:00'
+last_lottery = '2021-02-10'
+
+use_last_lottery = False
 
 TC_filename           = r'SE T&C Form.csv'
 applications_filename = r'SE Application Form.csv'
 inventory_filename    = r'SE Inventory - Inventory.csv'
 
-#%%
+winner_file_ss = 'winner_file_ss.pickle'
+winner_file_sk = 'winner_file_sk.pickle'
+
+
+# In[4]:
+
 
 # build all the paths to the input and output files
 result_filename = '{}_handout.xls'.format(datetime.strftime(datetime.today(), '%Y-%m-%d'))
@@ -34,7 +59,9 @@ for path in [TC_path, inventory_path, applications_path]:
 if not os.path.isdir(result_path.parent):
     os.mkdir(result_path.parent)
 
-# %%
+
+# In[5]:
+
 
 # read the files
 applications = pd.read_csv(applications_path,
@@ -44,7 +71,9 @@ applications = pd.read_csv(applications_path,
 tc_form = pd.read_csv(TC_path, usecols=['Name', 'E-Mail'])
 inventory = pd.read_csv(inventory_path)
 
-#%%
+
+# In[6]:
+
 
 # get indices, where inventory of the containers start and ent
 start_sk_inventory = inventory.index[inventory['Name'] == 'Sjoeskrenten Container:'].to_list()[0]
@@ -62,7 +91,9 @@ ss_inventory = ss_inventory.shift(2)
 sk_inventory.dropna(subset=['Name'], inplace=True)
 ss_inventory.dropna(subset=['Name'], inplace=True)
 
-#%%
+
+# In[7]:
+
 
 # drop duplicates in applications
 # search for duplicates in Name and Username sepereately, with both in a list it will only find duplicates with both
@@ -73,13 +104,48 @@ applications.drop_duplicates('Username', keep='last', inplace=True)
 applications.rename(columns={'Equipment Sjoeskrenten':'SK', 'Equipment Ski/Snowscooter':'SS'}, inplace=True)
 
 
-#%%
+# In[8]:
 
 
-#ToDO: kick out people who did not sign T&C and who are behind deadline
+# only use first and last names
+def first_last(df):
+    names_first_last = [name.rstrip(' ') for name in df['Name']]
+    names_first_last = [name.split(' ')[0] + ' ' + name.split(' ')[-1] for name in names_first_last]
+    return names_first_last
+
+tc_first_last = first_last(tc_form)
+applications_first_last = first_last(applications)
+
+# create list of booleans, True if person has signed
+signed_tc = [n in tc_first_last for n in applications_first_last]
+did_not_sign = applications[[not i for i in signed_tc]]['Name']
+
+# kick out the people who didn't sign
+applications = applications[signed_tc]
 
 
-#%%
+# In[9]:
+
+
+print('people who applied, but did not sign:')
+print([name for name in did_not_sign])
+
+
+# In[10]:
+
+
+deadline = datetime.strptime(deadline, '%Y-%m-%d %H:%M')
+
+# remove the timezone data from the applications, so they can be compared to the deadline
+application_times = [t.replace(tzinfo=None) for t in applications['Timestamp']]
+before_deadline = [t < deadline for t in application_times]
+
+# kick out people who are after deadline
+applications = applications[before_deadline]
+
+
+# In[11]:
+
 
 # loop through applications and put the items on 'want list' and put in, who wants them
 want_dict_sk = {}
@@ -127,7 +193,9 @@ for _, person in applications.iterrows():
                 want_dict_ss[item] = [person['Name']]
 
 
-#%%
+# In[12]:
+
+
 # check demand of every item, and if neccessary, do the lottery
 
 # SK container
@@ -142,11 +210,13 @@ for item, applicants in want_dict_sk.items():
     else:
         won_dict_sk[item] = applicants
 
-#%%
+
+# In[13]:
+
 
 # pay special attention to the skis and boots and poles
 # do the lottery for skis only. Everybody who gets skis, will get boots
-ski_names = ('Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard')
+ski_names = ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
 won_dict_ski_readable = {ski:[] for ski in ski_names}
 ski_indices = {}
 
@@ -154,14 +224,27 @@ for ski in ski_names:
     # get the item numbers for every ski type
     items_skis = ss_inventory.index[[ski == name for name in ss_inventory['Name']]]
     ski_indices[ski] = items_skis
-    
+
+# shuffle, so that there is no bias for handing out skis because of the order in ski_names
+shuffle(ski_names)
+
 # for every ski type, check who wants it
 for ski in ski_names:
     # iterate through all ski types
     for item in ski_indices[ski]:
         # check if skis are requested
         if item in want_dict_ss.keys():
-            applicants = want_dict_ss[item]
+            applicants_all = want_dict_ss[item]
+            
+            # delete applicants who already have an other type of ski
+            already_won = []
+            # make list of people who already won skis
+            for winners in won_dict_ski_readable.values():
+                already_won += winners
+            
+            # delete winners form list of applicants, so they don't get two pairs of skis
+            applicants = [person for person in applicants_all if person not in already_won]
+                
             demand = len(applicants)
             stock = ss_inventory['Number'][item]
             
@@ -170,6 +253,7 @@ for ski in ski_names:
                 won_dict_ski_readable[ski] += won
             else:
                 won_dict_ski_readable[ski] += applicants
+                    
 
 won_dict_ski = {}
 # make a dict with the written name, better to check
@@ -177,7 +261,8 @@ for ski, people in won_dict_ski_readable.items():
     item = ski_indices[ski][0]
     won_dict_ski[item] = people
 
-#%%
+
+# In[14]:
 
 
 # Lottery on boots is kind of useless. When people got skis, they just have to find some boots that fit.
@@ -185,9 +270,10 @@ for ski, people in won_dict_ski_readable.items():
 # rather do the lottery on skins
 
 
-#%%
+# In[15]:
 
-# boots only for people who got skis
+
+# get indices of boots
 boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots')
 boot_indices = {}
 
@@ -218,7 +304,8 @@ for ski, people in won_dict_ski_readable.items():
                 won_dict_boots[item] = won
             else:
                 won_dict_boots[item] = applicants
-#%%
+# In[16]:
+
 
 # delete skis and boots from want list snow scooter to not do the lottery on them again
 
@@ -234,7 +321,8 @@ for index in indices_to_delete:
         del want_dict_ss[index]
 
 
-#%%
+# In[17]:
+
 
 # Lottery for the rest of the container
 # check demand of every item, and if neccessary, do the lottery
@@ -252,7 +340,8 @@ for item, applicants in want_dict_ss.items():
         won_dict_ss[item] = applicants
 
 
-#%%
+# In[18]:
+
 
 # now go through all the winner lists and gather the items one person has won
 winner_sk = {}
@@ -274,9 +363,11 @@ for _dict in [won_dict_ss, won_dict_boots, won_dict_ski]:
                 winner_ss[person] += [item]
             else:
                 winner_ss[person] = [item]
+                
 
 
-#%%
+# In[19]:
+
 
 # use item names instead of numbers
 winner_sk_readable = {}
@@ -290,8 +381,9 @@ for winner, item in winner_ss.items():
     winner_ss_readable[winner] = names
 
 
-#%%
-    
+# In[20]:
+
+
 # sort winner alphabeticaly
 sorted_sk = {}
 for name, items in sorted(winner_sk_readable.items()):
@@ -301,7 +393,9 @@ sorted_ss = {}
 for name, items in sorted(winner_ss_readable.items()):
     sorted_ss[name] = items
 
-#%%
+
+# In[21]:
+
 
 # write everything to an excel sheet
 
@@ -355,8 +449,21 @@ for sheet, result, header in zip([sheet_sk, sheet_ss], [sorted_sk, sorted_ss], [
 wb.save(result_path)
 
 
-#%%
+# In[22]:
+
+
+# save the winners to file
+with open(Path(result_dir, winner_file_ss), 'wb') as fp:
+    pickle.dump(winner_ss, fp)
+    
+with open(Path(result_dir, winner_file_sk), 'wb') as fp:
+    pickle.dump(winner_sk, fp)
+
+
+# In[23]:
+
 
 print('Written results to {}'.format(result_path))
+print('Written at {}'.format(datetime.now()))
 print('Done.')
 
