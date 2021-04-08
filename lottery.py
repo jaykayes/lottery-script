@@ -70,10 +70,6 @@ def main():
     # change column names for quicker typing
     applications.rename(columns={'Equipment Sjoeskrenten':'SK', 'Equipment Ski/Snowscooter':'SS'}, inplace=True)
 
-
-    tc_first_last = first_last(tc_form)
-    applications_first_last = first_last(applications)
-
     # check if applications were submitted in the time frame
     deadline = datetime.strptime(deadline, '%Y-%m-%d %H:%M')
     lasttime = datetime.strptime(last_lottery, '%Y-%m-%d %H:%M')
@@ -148,7 +144,6 @@ def main():
     # hardcode indices of skis:
     ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
 
-    won_dict_ski_readable = {ski:[] for ski in ski_names}
     ski_indices = {}
 
     for ski, ind in zip(ski_names, ski_ind_list):
