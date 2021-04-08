@@ -161,7 +161,7 @@ def main():
 
 
     # shuffle, so that there is no bias for handing out skis because of the order in ski_names
-    shuffle(ski_names)
+    shuffle(ski_ind_list)
     won_dict_ski = {i:[] for i in ski_ind_list}
 
     for item in ski_ind_list:
@@ -185,7 +185,7 @@ def main():
                 won_dict_ski[item] += won
             else:
                 won_dict_ski[item] += applicants
-
+    print('ski winners', won_dict_ski.values())
 
     # Lottery on boots is kind of useless. When people got skis, they just have to find some boots that fit.
     # If you do the lottery on boots too, it is possible that someone gets skis, but no boots
@@ -238,9 +238,7 @@ def main():
 
     # delete skis and boots from want list snow scooter to not do the lottery on them again
 
-    indices_to_delete = []
-    for index in ski_indices.values():
-        indices_to_delete += [i for i in index]
+    indices_to_delete = ski_ind_list
 
     for index in boot_indices.values():
         indices_to_delete += [i for i in index]
