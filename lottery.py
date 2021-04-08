@@ -91,6 +91,7 @@ def main():
     applications = applications[applications['terms and conditions'].notna()]
 
 
+
     # loop through applications and put the items on 'want list' and put in, who wants them
     want_dict_sk = {}
     want_dict_ss = {}
@@ -117,24 +118,23 @@ def main():
                 print('wrong format for', person['Name'], 'in SS list')
                 print(person['SS'])
 
+        itemlist = itemlist_SK + itemlist_SS
         # add items to want dict, put people onto items
-        for item in itemlist_SK:
-            if item not in sk_inventory.index.to_list(): # check if item is in the inventory list
+        for item in itemlist:
+            if item not in inventory.index.to_list(): # check if item is in the inventory list
                 pass
             else:
-                if item in want_dict_sk.keys(): # if item is already in the list, append the new name
-                    want_dict_sk[item] = want_dict_sk[item] + [person['Name']]
+                if item <= end_sk_inventory:
+                    if item in want_dict_sk.keys(): # if item is already in the list, append the new name
+                        want_dict_sk[item] = want_dict_sk[item] + [person['Name']]
+                    else:
+                        want_dict_sk[item] = [person['Name']]
                 else:
-                    want_dict_sk[item] = [person['Name']]
+                    if item in want_dict_ss.keys(): # if item is already in the list, append the new name
+                        want_dict_ss[item] = want_dict_ss[item] + [person['Name']]
+                    else:
+                        want_dict_ss[item] = [person['Name']]
 
-        for item in itemlist_SS:
-            if item not in ss_inventory.index.to_list(): # check if item is in the inventory list
-                pass
-            else:
-                if item in want_dict_ss.keys(): # if item is already in the list, append the new name
-                    want_dict_ss[item] = want_dict_ss[item] + [person['Name']]
-                else:
-                    want_dict_ss[item] = [person['Name']]
 
 
     # pay special attention to the skis and boots and poles
@@ -287,8 +287,6 @@ def main():
     sorted_sk = sort_by_name(winner_sk_readable)
     sorted_ss = sort_by_name(winner_ss_readable)
 
-
-
     # write everything to an excel sheet
 
     wb = xlwt.Workbook() 
@@ -351,6 +349,7 @@ def main():
     print('Written results to {}'.format(result_path))
     print('Written at {}'.format(datetime.now()))
     print('Done.')
+
 
 def do_lottery(want_dict, inventory):
     won_dict = {}
