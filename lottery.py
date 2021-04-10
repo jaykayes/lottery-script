@@ -22,6 +22,9 @@ def main():
     applications_filename = r'SE Application Form.csv'
     inventory_filename    = r'SE Inventory - Inventory.csv'
 
+    # hardcode indices of skis:
+    ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
+
     winner_file_ss = 'winner_file_ss.pickle'
     winner_file_sk = 'winner_file_sk.pickle'
 
@@ -136,9 +139,7 @@ def main():
                         want_dict_ss[item] = [person['Name']]
 
 
-    # hardcode indices of skis:
-    ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
-    won_dict_ski = do_ski_lottery(ski_ind_list, want_dict, inventory)
+    won_dict_ski = do_ski_lottery(ski_ind_list, want_dict_ss, inventory)
 
     # begin of do the lottery once for every item if people applied for the same thing twice. Make a want_dict_twice with stuff they requested multiple times and do the lottery again
     #clean_sk = {}
