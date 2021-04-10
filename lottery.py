@@ -22,13 +22,14 @@ def main():
     applications_filename = r'SE Application Form.csv'
     inventory_filename    = r'SE Inventory - Inventory.csv'
 
-    # hardcode indices of skis:
-    # ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
-    ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
-
     winner_file_ss = 'winner_file_ss.pickle'
     winner_file_sk = 'winner_file_sk.pickle'
 
+    end_sk_inventory = 999 # all ss container stuff is bigger than 1000
+
+    # hardcode indices of skis:
+    # ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
+    ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
 
     # build all the paths to the input and output files
     result_filename = '{}_handout.xls'.format(datetime.strftime(datetime.today(), '%Y-%m-%d'))
@@ -53,18 +54,11 @@ def main():
                                usecols=['Timestamp', 'terms and conditions', 'Username', 'Name', 'Equipment Sjoeskrenten', 'Equipment Ski/Snowscooter'],
                                parse_dates=['Timestamp'],
                                dtype={'Equipment Sjoeskrenten': str, 'Equipment Ski/Snowscooter': str})
-    tc_form = pd.read_csv(TC_path, usecols=['Name', 'E-Mail'])
     inventory = pd.read_csv(inventory_path, index_col=0)
 
-
+    # clean up inventory
     # drop everything that is not an inventory item, eg headers
     inventory = inventory[inventory.index.notna()]
-
-    end_sk_inventory = 999 # all ss container stuff is bigger than 1000
-
-    # split for sjoerskrenten and snowscooter containers
-    sk_inventory = inventory[inventory.index <= end_sk_inventory]
-    ss_inventory = inventory[inventory.index > end_sk_inventory]
 
     # drop duplicates in applications
     # search for duplicates in Name and Username sepereately, with both in a list it will only find duplicates with both
