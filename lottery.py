@@ -32,7 +32,8 @@ def main():
     ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
 
     # build all the paths to the input and output files
-    result_filename = '{}_handout.xls'.format(datetime.strftime(datetime.today(), '%Y-%m-%d'))
+    today_string = datetime.strftime(datetime.today(), '%Y-%m-%d')
+    result_filename = f'{today_string}_handout.xls'
 
     TC_path           = Path(forms_dir, TC_filename)
     inventory_path    = Path(forms_dir, inventory_filename)
@@ -42,7 +43,7 @@ def main():
 
     for path in [TC_path, inventory_path, applications_path]:
         if not os.path.isfile(path):
-            raise ValueError('{} does not exist. Check input files.'.format(path))
+            raise ValueError(f'{path} does not exist. Check input files.')
 
     # if the directory for the results does not exist, make it
     if not os.path.isdir(result_path.parent):
@@ -193,7 +194,7 @@ def main():
         sheet.col(2).width = 4000
         sheet.col(3).width = 5000
 
-        sheet.write_merge(0, 0, 0, 1, '{h} {a}'.format(h=header, a=datetime.strftime(datetime.today(), '%d.%m.%Y')), style_header_container)
+        sheet.write_merge(0, 0, 0, 1, f'{header} {today_string}', style_header_container)
         sheet.row(0).height_mismatch = True       # for the adjustment of the row height
         sheet.row(0).height = 400
 
@@ -229,8 +230,8 @@ def main():
         pickle.dump(winner_sk, fp)
 
 
-    print('Written results to {}'.format(result_path))
-    print('Written at {}'.format(datetime.now()))
+    print(f'Written results to {result_path}')
+    print(f'Written at {datetime.now()}')
     print('Done.')
 
 
