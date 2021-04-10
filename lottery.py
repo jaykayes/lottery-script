@@ -23,6 +23,7 @@ def main():
     inventory_filename    = r'SE Inventory - Inventory.csv'
 
     # hardcode indices of skis:
+    # ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
     ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
 
     winner_file_ss = 'winner_file_ss.pickle'
@@ -139,7 +140,6 @@ def main():
                         want_dict_ss[item] = [person['Name']]
 
 
-    won_dict_ski = do_ski_lottery(ski_ind_list, want_dict_ss, inventory)
 
     # begin of do the lottery once for every item if people applied for the same thing twice. Make a want_dict_twice with stuff they requested multiple times and do the lottery again
     #clean_sk = {}
@@ -155,6 +155,7 @@ def main():
     # Lottery for the rest of the container
     # check demand of every item, and if neccessary, do the lottery
 
+    won_dict_ski = do_ski_lottery(ski_ind_list, want_dict_ss, inventory)
     won_dict_ss = do_lottery(want_dict_ss, inventory)
     won_dict_sk = do_lottery(want_dict_sk, inventory)
 
@@ -265,7 +266,6 @@ def do_lottery(want_dict, inventory):
 def do_ski_lottery(ski_ind_list, want_dict, inventory):
     # pay special attention to the skis and boots and poles
     # do the lottery for skis only. Everybody who gets skis, will get boots
-    ski_names = ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
 
     # who wants what type of skis?
     want_dict_skis = {}
@@ -309,8 +309,6 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
     boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots')
     boot_indices = {}
 
-    won_dict_boots = {}
-
     for boots in boot_names:
         # get the item numbers for every boot type
         items_boots = inventory.index[[boots in name for name in inventory['Name']]]
@@ -343,7 +341,6 @@ def gather_wins(won_dict, inventory):
     winners_dict = {}
     
     for item, winners in won_dict.items():
-        item_name = inventory['Name'][item]
         for person in winners:
             if person in winners_dict.keys():
                 winners_dict[person] += [item]
