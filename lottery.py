@@ -136,116 +136,9 @@ def main():
                         want_dict_ss[item] = [person['Name']]
 
 
-
-    # pay special attention to the skis and boots and poles
-    # do the lottery for skis only. Everybody who gets skis, will get boots
-    ski_names = ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
-
     # hardcode indices of skis:
     ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
-
-    ski_indices = {}
-
-    for ski, ind in zip(ski_names, ski_ind_list):
-        ski_indices[ski] = ind
-
-    for ski in ski_names:
-        # get the item numbers for every ski type
-        items_skis = ss_inventory.index[[ski == name for name in ss_inventory['Name']]]
-        ski_indices[ski] = items_skis
-
-    # who wants what type of skis?
-    want_dict_skis = {}
-    for i in ski_ind_list:
-        want_dict_skis[i] = want_dict_ss[i]
-
-
-    # shuffle, so that there is no bias for handing out skis because of the order in ski_names
-    shuffle(ski_ind_list)
-    won_dict_ski = {i:[] for i in ski_ind_list}
-
-    for item in ski_ind_list:
-        if item in want_dict_ss.keys():
-            applicants_all = set(want_dict_ss[item]) # don't let people apply twice for skis to increase chances
-
-            # delete applicants who already have an other type of ski
-            already_won = []
-            # make list of people who already won skis
-            for winners in won_dict_ski.values():
-                already_won += winners
-
-            # delete winners form list of applicants, so they don't get two pairs of skis
-            applicants = [person for person in applicants_all if person not in already_won]
-
-            demand = len(applicants)
-            stock = ss_inventory['Number'][item]
-
-            if demand > stock:
-                won = sample(applicants, int(stock))
-                won_dict_ski[item] += won
-            else:
-                won_dict_ski[item] += applicants
-    print('ski winners', won_dict_ski.values())
-
-    # Lottery on boots is kind of useless. When people got skis, they just have to find some boots that fit.
-    # If you do the lottery on boots too, it is possible that someone gets skis, but no boots
-    # rather do the lottery on skins
-
-
-    # get indices of boots
-    boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots')
-    boot_indices = {}
-
-    won_dict_boots = {}
-
-    for boots in boot_names:
-        # get the item numbers for every boot type
-        items_boots = ss_inventory.index[[boots in name for name in ss_inventory['Name']]]
-        boot_indices[boots] = items_boots # save inventory numbers for every kind of boot
-
-    # get indices of boots
-    #sleeping_bags = ('Sleeping bag summer', 'Sleeping bag winter')
-    #sb_indices = {}
-    #
-    #won_dict_sb = {}
-    #
-    #for bag in sleeping_bags:
-    #    # get the item numbers for every boot type
-    #    items_bags = sk_inventory.index[[bag in name for name in sk_inventory['Name']]]
-    #    sb_indices[bag] = items_sb # save inventory numbers for every kind of boot
-
-    # go through list of ski winners
-#    for ski, people in won_dict_ski.items():        
-#        # find boots for skis
-#        index = ski # order of boot_names and order of ski_names has to match up
-#        boots = boot_names[index]
-#
-#        # find inventory numbers of those boots
-#        items = boot_indices[boots]
-#        # check demand for every inventory number
-#        for item in items:
-#            if item in want_dict_ss.keys(): # check if anybody wants this size of boots
-#                applicants = want_dict_ss[item]
-#                demand = len(applicants)
-#                stock = ss_inventory['Number'][item]
-#
-#                if demand > stock:
-#                    won = sample(applicants, int(stock))
-#                    won_dict_boots[item] = won
-#                else:
-#                    won_dict_boots[item] = applicants
-
-
-    # delete skis and boots from want list snow scooter to not do the lottery on them again
-
-    indices_to_delete = ski_ind_list
-
-    for index in boot_indices.values():
-        indices_to_delete += [i for i in index]
-
-    for index in indices_to_delete:
-        if index in want_dict_ss.keys(): # only delte stuff from the list, if it is really in there
-            del want_dict_ss[index]
+    won_dict_ski = do_ski_lottery(ski_ind_list, want_dict, inventory)
 
     # begin of do the lottery once for every item if people applied for the same thing twice. Make a want_dict_twice with stuff they requested multiple times and do the lottery again
     #clean_sk = {}
@@ -367,6 +260,73 @@ def do_lottery(want_dict, inventory):
             won_dict[item] = applicants
         
     return won_dict
+
+def do_ski_lottery(ski_ind_list, want_dict, inventory):
+    # pay special attention to the skis and boots and poles
+    # do the lottery for skis only. Everybody who gets skis, will get boots
+    ski_names = ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
+
+    # who wants what type of skis?
+    want_dict_skis = {}
+    for i in ski_ind_list:
+        want_dict_skis[i] = want_dict[i]
+
+
+    # shuffle, so that there is no bias for handing out skis because of the order in ski_names
+    shuffle(ski_ind_list)
+    won_dict_ski = {i:[] for i in ski_ind_list}
+
+    for item in ski_ind_list:
+        if item in want_dict_ss.keys():
+            applicants_all = set(want_dict[item]) # don't let people apply twice for skis to increase chances
+
+            # delete applicants who already have an other type of ski
+            already_won = []
+            # make list of people who already won skis
+            for winners in won_dict_ski.values():
+                already_won += winners
+
+            # delete winners form list of applicants, so they don't get two pairs of skis
+            applicants = [person for person in applicants_all if person not in already_won]
+
+            demand = len(applicants)
+            stock = ss_inventory['Number'][item]
+
+            if demand > stock:
+                won = sample(applicants, int(stock))
+                won_dict_ski[item] += won
+            else:
+                won_dict_ski[item] += applicants
+
+
+    # Lottery on boots is kind of useless. When people got skis, they just have to find some boots that fit.
+    # If you do the lottery on boots too, it is possible that someone gets skis, but no boots
+    # rather do the lottery on skins
+
+
+    # get indices of boots
+    boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots')
+    boot_indices = {}
+
+    won_dict_boots = {}
+
+    for boots in boot_names:
+        # get the item numbers for every boot type
+        items_boots = ss_inventory.index[[boots in name for name in ss_inventory['Name']]]
+        boot_indices[boots] = items_boots # save inventory numbers for every kind of boot
+
+    # delete skis and boots from want list snow scooter to not do the lottery on them again
+
+    indices_to_delete = ski_ind_list
+
+    for index in boot_indices.values():
+        indices_to_delete += [i for i in index]
+
+    for index in indices_to_delete:
+        if index in want_dict_ss.keys(): # only delte stuff from the list, if it is really in there
+            del want_dict_ss[index]
+
+    return won_dict_ski
 
 
 # only use first and last names
