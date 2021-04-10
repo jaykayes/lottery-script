@@ -77,15 +77,10 @@ def main():
     # remove the timezone data from the applications, so they can be compared to the deadline
     application_times = [t.replace(tzinfo=None) for t in applications['Timestamp']]
     before_deadline = [t < deadline for t in application_times]
-
-    # kick out people who are after deadline
-    applications = applications[before_deadline]
-
-    # kick out applications that date before the last lottery
-    application_times = [t.replace(tzinfo=None) for t in applications['Timestamp']] # again, because the length of applications changed
     after_last = [t > lasttime for t in application_times]
 
-    applications = applications[after_last]
+    keep = before_deadline and after_last
+    applications = applications[keep]
 
     # drop terms and conditions deniers (should only occur with too old data)
     applications = applications[applications['terms and conditions'].notna()]
