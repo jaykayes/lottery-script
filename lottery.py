@@ -68,7 +68,9 @@ def main():
     # change column names for quicker typing
     applications.rename(columns={'Equipment Sjoeskrenten':'SK', 'Equipment Ski/Snowscooter':'SS'}, inplace=True)
 
-    # check if applications were submitted in the time frame
+
+    ### clean up applications ###
+    # check if applications were submitted in the time frame    
     deadline = datetime.strptime(deadline, '%Y-%m-%d %H:%M')
     lasttime = datetime.strptime(last_lottery, '%Y-%m-%d %H:%M')
 
@@ -80,7 +82,7 @@ def main():
     applications = applications[before_deadline]
 
     # kick out applications that date before the last lottery
-    application_times = [t.replace(tzinfo=None) for t in applications['Timestamp']]
+    application_times = [t.replace(tzinfo=None) for t in applications['Timestamp']] # again, because the length of applications changed
     after_last = [t > lasttime for t in application_times]
 
     applications = applications[after_last]
@@ -89,7 +91,7 @@ def main():
     applications = applications[applications['terms and conditions'].notna()]
 
 
-
+    ### write want dicts ###
     # loop through applications and put the items on 'want list' and put in, who wants them
     want_dict_sk = {}
     want_dict_ss = {}
@@ -167,6 +169,8 @@ def main():
         else:
             winner_ss[name] = ski
 
+
+    # make lists with readable items
     winner_sk_readable = make_readable(winner_sk, inventory)
     winner_ss_readable = make_readable(winner_ss, inventory)
 
@@ -256,6 +260,7 @@ def do_lottery(want_dict, inventory):
             won_dict[item] = applicants
         
     return won_dict
+
 
 def do_ski_lottery(ski_ind_list, want_dict, inventory):
     # pay special attention to the skis and boots and poles
