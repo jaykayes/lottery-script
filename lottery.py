@@ -143,16 +143,13 @@ def main():
     #    for applicant in applica
 
 
-    # Lottery for the rest of the container
-    # check demand of every item, and if neccessary, do the lottery
-
+    # Lottery
     won_dict_ski = do_ski_lottery(ski_ind_list, want_dict_ss, inventory)
     won_dict_ss = do_lottery(want_dict_ss, inventory)
     won_dict_sk = do_lottery(want_dict_sk, inventory)
 
 
     # now go through all the winner lists and gather the items one person has won
-
     winner_sk = gather_wins(won_dict_sk, inventory)
     winner_ss = gather_wins(won_dict_ss, inventory)
     winner_ski = gather_wins(won_dict_ski, inventory)
@@ -173,7 +170,7 @@ def main():
     sorted_sk = sort_by_name(winner_sk_readable)
     sorted_ss = sort_by_name(winner_ss_readable)
 
-    # write everything to an excel sheet
+    ### write everything to an excel sheet
 
     wb = xlwt.Workbook() 
     line_width = 20
@@ -206,7 +203,7 @@ def main():
         sheet.write(2, 2, 'Comments', style_header)
         sheet.write(2, 3, 'Signature', style_header)
 
-        row = 3 #start row
+        row = 3 # start row
         for name, items in result.items():
             # separate items by linebreak
             formatted_items = ''
@@ -224,7 +221,7 @@ def main():
 
     wb.save(result_path)
 
-    # save the winners to file
+    # save the winners to pickle
     with open(Path(result_dir, winner_file_ss), 'wb') as fp:
         pickle.dump(winner_ss, fp)
 
