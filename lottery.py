@@ -277,7 +277,7 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
     won_dict_ski = {i:[] for i in ski_ind_list}
 
     for item in ski_ind_list:
-        if item in want_dict_ss.keys():
+        if item in want_dict.keys():
             applicants_all = set(want_dict[item]) # don't let people apply twice for skis to increase chances
 
             # delete applicants who already have an other type of ski
@@ -290,7 +290,7 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
             applicants = [person for person in applicants_all if person not in already_won]
 
             demand = len(applicants)
-            stock = ss_inventory['Number'][item]
+            stock = inventory['Number'][item]
 
             if demand > stock:
                 won = sample(applicants, int(stock))
@@ -312,7 +312,7 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
 
     for boots in boot_names:
         # get the item numbers for every boot type
-        items_boots = ss_inventory.index[[boots in name for name in ss_inventory['Name']]]
+        items_boots = inventory.index[[boots in name for name in inventory['Name']]]
         boot_indices[boots] = items_boots # save inventory numbers for every kind of boot
 
     # delete skis and boots from want list snow scooter to not do the lottery on them again
@@ -323,8 +323,8 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
         indices_to_delete += [i for i in index]
 
     for index in indices_to_delete:
-        if index in want_dict_ss.keys(): # only delte stuff from the list, if it is really in there
-            del want_dict_ss[index]
+        if index in want_dict.keys(): # only delte stuff from the list, if it is really in there
+            del want_dict[index]
 
     return won_dict_ski
 
