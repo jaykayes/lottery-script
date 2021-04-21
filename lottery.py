@@ -17,8 +17,6 @@ def main():
     last_lottery = '2021-04-07 16:00'
     deadline = '2021-04-21 16:00'
 
-    use_last_lottery = False # for results with tick marks, not yet done
-
     applications_filename = r'SE Application Form.csv'
     inventory_filename    = r'SE Inventory - Inventory.csv'
 
@@ -162,55 +160,7 @@ def main():
     sorted_ss = sort_by_name(winner_ss_readable)
 
     ### write everything to an excel sheet
-
-    wb = xlwt.Workbook() 
-    line_width = 20
-
-    style_header_container = xlwt.easyxf("alignment: wrap True; font: bold on, height 280")
-    style_header           = xlwt.easyxf("alignment: wrap True; borders: left thin, right thin, top thin, bottom thin; font: bold on")
-    style                  = xlwt.easyxf("alignment: wrap True, vert centre; borders: left thin, right thin, top thin, bottom thin")
-
-    
-    # create the first sheet for the Sjoeskrenten results
-    sheet_sk = wb.add_sheet('Sjoerskrenten')
-    # create the second sheet for the Snowscooter results
-    sheet_ss = wb.add_sheet('Snowscooter')
-
-    for sheet, result, header in zip([sheet_sk, sheet_ss], [sorted_sk, sorted_ss], ['Sjoeskrenten', 'Snowscooter']):
-        # set size for columns
-        sheet.col(0).width = 256 * line_width + 1000
-        sheet.col(1).width = 256 * line_width + 2000
-
-        sheet.col(2).width = 4000
-        sheet.col(3).width = 5000
-
-        sheet.write_merge(0, 0, 0, 1, f'{header} {today_string}', style_header_container)
-        sheet.row(0).height_mismatch = True       # for the adjustment of the row height
-        sheet.row(0).height = 400
-
-        # write header
-        sheet.write(2, 0, 'Name', style_header)
-        sheet.write(2, 1, 'Equipment', style_header)
-        sheet.write(2, 2, 'Comments', style_header)
-        sheet.write(2, 3, 'Signature', style_header)
-
-        row = 3 # start row
-        for name, items in result.items():
-            # separate items by linebreak
-            formatted_items = ''
-            sheet.write(row, 0, name, style)
-            for item in items:
-                formatted_items = formatted_items + '\n' + item
-
-            sheet.write(row, 1, formatted_items, style)
-            sheet.row(row).height_mismatch = True
-            sheet.row(row).height = (len(items) + 2) * 256
-            sheet.write(row, 2, '', style)
-            sheet.write(row, 3, '', style)
-
-            row = row + 1
-
-    wb.save(result_path)
+    write_to_excel(['Sjoerskrenten', 'Snowscooter'], [sorted_sk, sorted_ss], result_path)
 
     # save the winners to pickle
     with open(Path(result_dir, winner_file_ss), 'wb') as fp:
@@ -347,6 +297,59 @@ def sort_by_name(winner_readable):
         sorted_dict[name] = items
     
     return sorted_dict
+
+
+def write_to_excel(sheet_names, winnerdicts, result_path):
+    assert len(sheet_names) == len(winnerdicts), 'you need one sheet name for every winner dict'
+
+    wb = xlwt.Workbook() 
+    line_width = 20
+
+    style_header_container = xlwt.easyxf("alignment: wrap True; font: bold on, height 280")
+    style_header           = xlwt.easyxf("alignment: wrap True; borders: left thin, right thin, top thin, bottom thin; font: bold on")
+    style                  = xlwt.easyxf("alignment: wrap True, vert centre; borders: left thin, right thin, top thin, bottom thin")
+
+    # create the sheets
+    sheetlist = [wb.add_sheet(name) for name in sheet_names]
+
+    today_string = datetime.strftime(datetime.today(), '%Y-%m-%d')
+
+    for sheet, result, header in zip(sheetlist, winnerdicts, sheet_names):
+        # set size for columns
+        sheet.col(0).width = 256 * line_width + 1000
+        sheet.col(1).width = 256 * line_width + 2000
+
+        sheet.col(2).width = 4000
+        sheet.col(3).width = 5000
+
+        sheet.write_merge(0, 0, 0, 1, f'{header} {today_string}', style_header_container)
+        sheet.row(0).height_mismatch = True       # for the adjustment of the row height
+        sheet.row(0).height = 400
+
+        # write header
+        sheet.write(2, 0, 'Name', style_header)
+        sheet.write(2, 1, 'Equipment', style_header)
+        sheet.write(2, 2, 'Comments', style_header)
+        sheet.write(2, 3, 'Signature', style_header)
+
+        row = 3 # start row
+        for name, items in result.items():
+            # separate items by linebreak
+            formatted_items = ''
+            sheet.write(row, 0, name, style)
+            for item in items:
+                formatted_items = formatted_items + '\n' + item
+
+            sheet.write(row, 1, formatted_items, style)
+            sheet.row(row).height_mismatch = True
+            sheet.row(row).height = (len(items) + 2) * 256
+            sheet.write(row, 2, '', style)
+            sheet.write(row, 3, '', style)
+
+            row = row + 1
+
+    wb.save(result_path)
+
 
 
 if __name__ == "__main__":
