@@ -12,7 +12,7 @@ from pathlib import Path
 
 def main():
     forms_dir = Path('/home/max/Downloads/SE_forms/2021-04-21')
-    result_dir = Path(forms_dir, 'results')
+    result_dir = Path(forms_dir, 'results_test')
 
     last_lottery = '2021-04-07 16:00'
     deadline = '2021-04-21 16:00'
@@ -89,7 +89,6 @@ def main():
     want_dict_sk = {}
     want_dict_ss = {}
 
-    split_at = r'\W+'
 
     for _, person in applications.iterrows():
         itemlist = []
@@ -97,7 +96,7 @@ def main():
         # if input does not convert to integers, skip it
         for container in ['SK', 'SS']:
             if isinstance(person[container], str):
-                for split in re.split(split_at, person[container]):
+                for split in re.findall(r'\d+', person[container]): # \d+ finds all numbers in a row '023a4. 5' = [023, 4, 5]
                     try:
                         itemlist.append(int(split))
                     except:
