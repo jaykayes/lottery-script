@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import os
+import re
 import xlwt
 import pickle
 import pandas as pd
@@ -10,15 +11,14 @@ from random import sample, shuffle
 from pathlib import Path
 
 def main():
-    forms_dir = Path('/home/max/Downloads/SE_forms/2021-04-07')
-    result_dir = Path(forms_dir, 'results_test')
+    forms_dir = Path('/home/max/Downloads/SE_forms/2021-04-21')
+    result_dir = Path(forms_dir, 'results')
 
-    last_lottery = '2021-03-24 16:00'
-    deadline = '2021-04-07 16:00'
+    last_lottery = '2021-04-07 16:00'
+    deadline = '2021-04-21 16:00'
 
     use_last_lottery = False # for results with tick marks, not yet done
 
-    TC_filename           = r'SE T&C Form.csv'
     applications_filename = r'SE Application Form.csv'
     inventory_filename    = r'SE Inventory - Inventory.csv'
 
@@ -35,13 +35,12 @@ def main():
     today_string = datetime.strftime(datetime.today(), '%Y-%m-%d')
     result_filename = f'{today_string}_handout.xls'
 
-    TC_path           = Path(forms_dir, TC_filename)
     inventory_path    = Path(forms_dir, inventory_filename)
     applications_path = Path(forms_dir, applications_filename)
 
     result_path       = Path(result_dir, result_filename)
 
-    for path in [TC_path, inventory_path, applications_path]:
+    for path in [inventory_path, applications_path]:
         if not os.path.isfile(path):
             raise ValueError(f'{path} does not exist. Check input files.')
 
@@ -80,7 +79,7 @@ def main():
     before_deadline = [t < deadline for t in application_times]
     after_last = [t > lasttime for t in application_times]
 
-    keep = before_deadline and after_last
+    keep = [a and b for a,b in zip(before_deadline, after_last)]
     applications = applications[keep]
 
     # drop terms and conditions deniers (should only occur with too old data)
@@ -92,29 +91,20 @@ def main():
     want_dict_sk = {}
     want_dict_ss = {}
 
+    split_at = r'\W+'
+
     for _, person in applications.iterrows():
-        itemlist_SS = []
-        itemlist_SK = []
+        itemlist = []
         # clean up input and make items into list of integers
         # if input does not convert to integers, skip it
-        try:
-            clean = person['SK'].rstrip(', ')
-            itemlist_SK = [int(s.lstrip(' ')) for s in clean.split(',')]
-        except:
-            pass
-            if str(person['SK']) != 'nan':
-                print('wrong format for', person['Name'], 'in SK list')
-                print(person['SK'])
-        try:
-            clean = person['SS'].rstrip(', ')
-            itemlist_SS = [int(s.lstrip(' ')) for s in clean.split(',')]
-        except:
-            pass
-            if str(person['SS']) != 'nan':
-                print('wrong format for', person['Name'], 'in SS list')
-                print(person['SS'])
+        for container in ['SK', 'SS']:
+            if isinstance(person[container], str):
+                for split in re.split(split_at, person[container]):
+                    try:
+                        itemlist.append(int(split))
+                    except:
+                        print(person['Name'], person['SK'], split)
 
-        itemlist = itemlist_SK + itemlist_SS
         # add items to want dict, put people onto items
         for item in itemlist:
             if item not in inventory.index.to_list(): # check if item is in the inventory list
@@ -259,11 +249,6 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
     # pay special attention to the skis and boots and poles
     # do the lottery for skis only. Everybody who gets skis, will get boots
 
-    # who wants what type of skis?
-    want_dict_skis = {}
-    for i in ski_ind_list:
-        want_dict_skis[i] = want_dict[i]
-
 
     # shuffle, so that there is no bias for handing out skis because of the order in ski_names
     shuffle(ski_ind_list)
@@ -298,7 +283,7 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
 
 
     # get indices of boots
-    boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots')
+    boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots','Fjell ski skins short', 'Poles')
     boot_indices = {}
 
     for boots in boot_names:
