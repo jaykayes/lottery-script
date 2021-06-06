@@ -11,14 +11,14 @@ from random import sample, shuffle
 from pathlib import Path
 
 def main():
-    forms_dir = Path('/home/max/Downloads/SE_forms/2021-04-21')
-    result_dir = Path(forms_dir, 'results_test')
+    forms_dir = Path('./sample_data')
+    result_dir = Path(forms_dir, 'results')
 
-    last_lottery = '2021-04-07 16:00'
-    deadline = '2021-04-21 16:00'
+    last_lottery = '2021-04-20 16:00'
+    deadline = '2021-05-04 16:00'
 
-    applications_filename = r'SE Application Form.csv'
-    inventory_filename    = r'SE Inventory - Inventory.csv'
+    applications_filename = r'sample_applications1.csv'
+    inventory_filename    = r'sample_inventory.csv'
 
     winner_file_ss = 'winner_file_ss.pickle'
     winner_file_sk = 'winner_file_sk.pickle'
