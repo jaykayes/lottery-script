@@ -17,8 +17,8 @@ def main():
     last_lottery = '2021-04-20 16:00'
     deadline = '2021-05-04 16:00'
 
-    applications_filename = r'sample_applications1.csv'
-    inventory_filename    = r'sample_inventory.csv'
+    applications_filename = r'sample_from_sharepoint.xlsx'
+    inventory_filename    = r'SE Inventory.xlsx'
 
     winner_file_ss = 'winner_file_ss.pickle'
     winner_file_sk = 'winner_file_sk.pickle'
@@ -48,11 +48,11 @@ def main():
 
 
     # read the files
-    applications = pd.read_csv(applications_path,
-                               usecols=['Timestamp', 'terms and conditions', 'Username', 'Name', 'Equipment Sjoeskrenten', 'Equipment Ski/Snowscooter'],
-                               parse_dates=['Timestamp'],
-                               dtype={'Equipment Sjoeskrenten': str, 'Equipment Ski/Snowscooter': str})
-    inventory = pd.read_csv(inventory_path, index_col=0)
+    applications = pd.read_excel(applications_path,
+                               usecols=['Completion time', 'Terms and Conditions', 'Name', 'Item Numbers'],
+                               parse_dates=['Completion time'],
+                               dtype={'Item Numbers': str})
+    inventory = pd.read_excel(inventory_path, index_col=0)
 
     # clean up inventory
     # drop everything that is not an inventory item, eg headers
@@ -61,11 +61,6 @@ def main():
     # drop duplicates in applications
     # search for duplicates in Name and Username sepereately, with both in a list it will only find duplicates with both
     applications.drop_duplicates('Name', keep='last', inplace=True)
-    applications.drop_duplicates('Username', keep='last', inplace=True)
-
-    # change column names for quicker typing
-    applications.rename(columns={'Equipment Sjoeskrenten':'SK', 'Equipment Ski/Snowscooter':'SS'}, inplace=True)
-
 
     ### clean up applications ###
     # check if applications were submitted in the time frame    
@@ -73,7 +68,7 @@ def main():
     lasttime = datetime.strptime(last_lottery, '%Y-%m-%d %H:%M')
 
     # remove the timezone data from the applications, so they can be compared to the deadline
-    application_times = [t.replace(tzinfo=None) for t in applications['Timestamp']]
+    application_times = [t.replace(tzinfo=None) for t in applications['Completion time']]
     before_deadline = [t < deadline for t in application_times]
     after_last = [t > lasttime for t in application_times]
 
@@ -81,26 +76,25 @@ def main():
     applications = applications[keep]
 
     # drop terms and conditions deniers (should only occur with too old data)
-    applications = applications[applications['terms and conditions'].notna()]
+    applications = applications[applications['Terms and Conditions'].notna()]
 
 
     ### write want dicts ###
     # loop through applications and put the items on 'want list' and put in, who wants them
-    want_dict_sk = {}
     want_dict_ss = {}
+    want_dict_sk = {}
 
 
     for _, person in applications.iterrows():
         itemlist = []
         # clean up input and make items into list of integers
         # if input does not convert to integers, skip it
-        for container in ['SK', 'SS']:
-            if isinstance(person[container], str):
-                for split in re.findall(r'\d+', person[container]): # \d+ finds all numbers in a row '023a4. 5' = [023, 4, 5]
-                    try:
-                        itemlist.append(int(split))
-                    except:
-                        print(person['Name'], person['SK'], split)
+        if isinstance(person['Item Numbers'], str):
+            for split in re.findall(r'\d+', person['Item Numbers']): # \d+ finds all numbers in a row '023a4. 5' = [023, 4, 5]
+                try:
+                    itemlist.append(int(split))
+                except:
+                    print(person['Name'], person['SK'], split)
 
         # add items to want dict, put people onto items
         for item in itemlist:
@@ -117,18 +111,6 @@ def main():
                         want_dict_ss[item] = want_dict_ss[item] + [person['Name']]
                     else:
                         want_dict_ss[item] = [person['Name']]
-
-
-
-    # begin of do the lottery once for every item if people applied for the same thing twice. Make a want_dict_twice with stuff they requested multiple times and do the lottery again
-    #clean_sk = {}
-    #clean_sk_multiples = {}
-    #
-    #for item, applicants in want_dict_sk.items():
-    #    clean_sk[item] = set(applicants)
-    #    
-    #    seen = []
-    #    for applicant in applica
 
 
     # Lottery
@@ -252,14 +234,6 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
             del want_dict[index]
 
     return won_dict_ski
-
-
-# only use first and last names
-def first_last(df):
-    names_first_last = [name.rstrip(' ') for name in df['Name']]
-    names_first_last = [name.split(' ')[0] + ' ' + name.split(' ')[-1] for name in names_first_last]
-    
-    return names_first_last
 
 
 def gather_wins(won_dict, inventory):
