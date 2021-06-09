@@ -15,7 +15,7 @@ def main():
     result_dir = Path(forms_dir, 'results')
 
     last_lottery = '2021-04-20 16:00'
-    deadline = '2021-05-04 16:00'
+    deadline = '2021-07-04 16:00'
 
     applications_filename = r'sample_from_sharepoint.xlsx'
     inventory_filename    = r'SE Inventory.xlsx'
@@ -51,8 +51,10 @@ def main():
     applications = pd.read_excel(applications_path,
                                usecols=['Completion time', 'Terms and Conditions', 'Name', 'Item Numbers'],
                                parse_dates=['Completion time'],
-                               dtype={'Item Numbers': str})
-    inventory = pd.read_excel(inventory_path, index_col=0)
+                               dtype={'Item Numbers': str},
+                               engine='openpyxl')
+    inventory = pd.read_excel(inventory_path, index_col=0,
+                               engine='openpyxl')
 
     # clean up inventory
     # drop everything that is not an inventory item, eg headers
