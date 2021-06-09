@@ -1,10 +1,20 @@
 # SE_lottery
 This is the script, that makes Student Equimpment lottery at UNIS happening.
 
-## How to run a lottery
-1. Download the results as .csv file. Be careful that google does not auto translate all the names to your browser language. The script needs to keep the headings of the questions in english.
+## Requirements for running this script
+This script needs a few python packages to work properly. Namely `pandas`, `xlwt` and `openpyxl`. You can install them by hand, but I recommend using a anaconda environment. Anaconda can be downloaded [here](https://www.anaconda.com/products/individual). You can create a new environment calles `SE_lottery` by running the command
+```
+conda create -n SE_lottery python=3.6 pandas xlwt openpyxl
+```
 
-2. Download the current inventory list as .csv from the google sheets document
+## How to run a lottery
+1. Download the answers from the excel form from sharepoint
+
+2. Download the current inventory list from the sharepoint
+
+3. Open the anaconda prompt
+
+4. run `conda activate SE_lottery`
 
 3. specify the directries where you put those files at the top of the script (variable forms_dir)
 
@@ -14,7 +24,8 @@ This is the script, that makes Student Equimpment lottery at UNIS happening.
 
 6. (only if the inventory numbers of ski changed) update the inventory numbers of skis
 
-7. run the script
+5. run `python PATH_TO_THE_LOTTERY_SCRIPT`
+
 
 ## What does it do?
 It takes the applications and the inventory and lotteries items, that have more requests than there is in stock. 
