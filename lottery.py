@@ -17,7 +17,7 @@ def main():
     last_lottery = '2021-04-20 16:00'
     deadline = '2021-07-04 16:00'
 
-    applications_filename = r'sample_from_sharepoint.xlsx'
+    applications_filename = r'sharepoint_sample2.xlsx'
     inventory_filename    = r'SE Inventory.xlsx'
 
     winner_file_ss = 'winner_file_ss.pickle'
@@ -48,20 +48,24 @@ def main():
 
 
     # read the files
-    applications = pd.read_excel(applications_path,
-                               usecols=['Completion time', 'Terms and Conditions', 'Name', 'Item Numbers'],
-                               parse_dates=['Completion time'],
-                               dtype={'Item Numbers': str},
-                               engine='openpyxl')
-    inventory = pd.read_excel(inventory_path, index_col=0,
-                               engine='openpyxl')
+    applications = pd.read_excel(
+            applications_path,
+            usecols=['Completion time', 'Terms and Conditions', 'Name', 'Item Numbers'],
+            parse_dates=['Completion time'],
+            dtype={'Item Numbers': str},
+            engine='openpyxl'
+            )
+    inventory = pd.read_excel(inventory_path,
+                              index_col=0,
+                              engine='openpyxl')
 
     # clean up inventory
     # drop everything that is not an inventory item, eg headers
     inventory = inventory[inventory.index.notna()]
 
-    # drop duplicates in applications
-    # search for duplicates in Name and Username sepereately, with both in a list it will only find duplicates with both
+    # Drop duplicates in applications
+    # Search for duplicates in Name and Username sepereately, with both in a
+    # list it will only find duplicates with both
     applications.drop_duplicates('Name', keep='last', inplace=True)
 
     ### clean up applications ###
@@ -69,7 +73,8 @@ def main():
     deadline = datetime.strptime(deadline, '%Y-%m-%d %H:%M')
     lasttime = datetime.strptime(last_lottery, '%Y-%m-%d %H:%M')
 
-    # remove the timezone data from the applications, so they can be compared to the deadline
+    # Remove the timezone data from the applications, so they can be compared
+    # to the deadline
     application_times = [t.replace(tzinfo=None) for t in applications['Completion time']]
     before_deadline = [t < deadline for t in application_times]
     after_last = [t > lasttime for t in application_times]
@@ -82,7 +87,8 @@ def main():
 
 
     ### write want dicts ###
-    # loop through applications and put the items on 'want list' and put in, who wants them
+    # Loop through applications and put the items on 'want list' and put in,
+    # who wants them
     want_dict_ss = {}
     want_dict_sk = {}
 
@@ -92,7 +98,8 @@ def main():
         # clean up input and make items into list of integers
         # if input does not convert to integers, skip it
         if isinstance(person['Item Numbers'], str):
-            for split in re.findall(r'\d+', person['Item Numbers']): # \d+ finds all numbers in a row '023a4. 5' = [023, 4, 5]
+            # \d+ finds all numbers in a row '023a4. 5' = [023, 4, 5]
+            for split in re.findall(r'\d+', person['Item Numbers']):
                 try:
                     itemlist.append(int(split))
                 except:
@@ -100,16 +107,19 @@ def main():
 
         # add items to want dict, put people onto items
         for item in itemlist:
-            if item not in inventory.index.to_list(): # check if item is in the inventory list
+            # check if item is in the inventory list
+            if item not in inventory.index.to_list():
                 pass
             else:
                 if item <= end_sk_inventory:
-                    if item in want_dict_sk.keys(): # if item is already in the list, append the new name
+                    # if item is already in the list, append the new name
+                    if item in want_dict_sk.keys():
                         want_dict_sk[item] = want_dict_sk[item] + [person['Name']]
                     else:
                         want_dict_sk[item] = [person['Name']]
                 else:
-                    if item in want_dict_ss.keys(): # if item is already in the list, append the new name
+                    # if item is already in the list, append the new name
+                    if item in want_dict_ss.keys():
                         want_dict_ss[item] = want_dict_ss[item] + [person['Name']]
                     else:
                         want_dict_ss[item] = [person['Name']]
@@ -143,7 +153,9 @@ def main():
     sorted_ss = sort_by_name(winner_ss_readable)
 
     ### write everything to an excel sheet
-    write_to_excel(['Sjoerskrenten', 'Snowscooter'], [sorted_sk, sorted_ss], result_path)
+    write_to_excel(['Sjoerskrenten', 'Snowscooter'],
+                   [sorted_sk, sorted_ss],
+                   result_path)
 
     # save the winners to pickle
     with open(Path(result_dir, winner_file_ss), 'wb') as fp:
@@ -179,17 +191,19 @@ def do_lottery(want_dict, inventory):
 
 
 def do_ski_lottery(ski_ind_list, want_dict, inventory):
-    # pay special attention to the skis and boots and poles
-    # do the lottery for skis only. Everybody who gets skis, will get boots
+    # Pay special attention to the skis and boots and poles. Do the lottery for
+    # skis only. Everybody who gets skis, will get boots.
 
 
-    # shuffle, so that there is no bias for handing out skis because of the order in ski_names
+    # Shuffle, so that there is no bias for handing out skis because of the
+    # order in ski_names.
     shuffle(ski_ind_list)
     won_dict_ski = {i:[] for i in ski_ind_list}
 
     for item in ski_ind_list:
         if item in want_dict.keys():
-            applicants_all = set(want_dict[item]) # don't let people apply twice for skis to increase chances
+            # don't let people apply twice for skis to increase chances
+            applicants_all = set(want_dict[item])
 
             # delete applicants who already have an other type of ski
             already_won = []
@@ -197,7 +211,8 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
             for winners in won_dict_ski.values():
                 already_won += winners
 
-            # delete winners form list of applicants, so they don't get two pairs of skis
+            # Delete winners form list of applicants, so they don't get two
+            # pairs of skis.
             applicants = [person for person in applicants_all if person not in already_won]
 
             demand = len(applicants)
@@ -210,21 +225,32 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
                 won_dict_ski[item] += applicants
 
 
-    # Lottery on boots is kind of useless. When people got skis, they just have to find some boots that fit.
-    # If you do the lottery on boots too, it is possible that someone gets skis, but no boots
-    # rather do the lottery on skins
+    # Lottery on boots is kind of useless. When people got skis, they just have
+    # to find some boots that fit.  If you do the lottery on boots too, it is
+    # possible that someone gets skis, but no boots.  Rather do the lottery on
+    # skins.
 
 
     # get indices of boots
-    boot_names = ('Fjellski shoes Telemark', 'Fjellski shoes BC', 'Cross Country shoes', 'Randonne ski boots', 'Freeride Boots', 'Snow board boots','Fjell ski skins short', 'Poles')
+    boot_names = ('Fjellski shoes Telemark',
+                  'Fjellski shoes BC',
+                  'Cross Country shoes',
+                  'Randonne ski boots',
+                  'Freeride Boots',
+                  'Snow board boots',
+                  'Fjell ski skins short',
+                  'Poles')
     boot_indices = {}
 
     for boots in boot_names:
         # get the item numbers for every boot type
         items_boots = inventory.index[[boots in name for name in inventory['Name']]]
-        boot_indices[boots] = items_boots # save inventory numbers for every kind of boot
 
-    # delete skis and boots from want list snow scooter to not do the lottery on them again
+        # save inventory numbers for every kind of boot
+        boot_indices[boots] = items_boots
+
+    # Delete skis and boots from want list snow scooter to not do the lottery
+    # on them again.
 
     indices_to_delete = ski_ind_list
 
@@ -232,7 +258,8 @@ def do_ski_lottery(ski_ind_list, want_dict, inventory):
         indices_to_delete += [i for i in index]
 
     for index in indices_to_delete:
-        if index in want_dict.keys(): # only delte stuff from the list, if it is really in there
+        # only delete stuff from the list, if it is really in there
+        if index in want_dict.keys():
             del want_dict[index]
 
     return won_dict_ski
