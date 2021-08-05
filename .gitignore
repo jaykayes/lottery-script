@@ -1,3 +1,7 @@
+# Ignore folder for lotteries
+/lotteries
+
+# Ignore output generated from sample data
 /sample_data/results
 
 # Python stuff

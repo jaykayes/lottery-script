@@ -6,37 +6,122 @@ import re
 import xlwt
 import pickle
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from random import sample, shuffle
 from pathlib import Path
 
 def main():
-    forms_dir = Path('./sample_data')
-    result_dir = Path(forms_dir, 'results')
+    '''Run the lottery from the commandline
 
-    last_lottery = '2021-04-20 16:00'
-    deadline = '2021-07-04 16:00'
+    This function provides a simple interface to the Student Equipment lottery.
+    Parameters can be tuned in this function, after which the script can simply
+    be run. The script can be run in an IDE like Spyder, or from the command
+    line.
+    '''
+    # Main settings
+    # =============
 
-    applications_filename = r'sharepoint_sample2.xlsx'
-    inventory_filename    = r'SE Inventory.xlsx'
+    # Name or ID for the lottery that is to be run. This is used below as the
+    # name of the folder from where applications are read from and where
+    # results are written.
+    lottery_id = "2021-W31"
+
+    # Dates for application deadline, and opening time. Start of application
+    # period (opening_time) is calculated by substracting the application
+    # period length from the deadline (end of application period). Opening time
+    # could also be specified manually. If 'opening_time' is defined, that is
+    # used instead.
+
+    deadline     = '2021-08-04 16:00'
+    # opening_time = '2021-07-07 16:00'
+
+    # Weeks between lotteries
+    application_period_length = timedelta(weeks = 2)
+
+    # Less adjusted parameters
+    # ========================
+
+    # Base path for lottery files
+    base_dir = Path('lotteries')
+
+    # Folder for lottery input, and for results
+    lottery_dir = Path(base_dir, lottery_id)
+    results_dir = Path(base_dir, lottery_id)
+
+    # Construct paths to the applications file and the inventory file
+    applications_file = Path(lottery_dir, 'applications.xlsx')
+    inventory_file    = Path(base_dir, 'inventory.xlsx')
+
+    # Build results filename
+    today_string     = datetime.strftime(datetime.today(), '%Y-%m-%d')
+    results_filename = f'{lottery_id}_handout.xls'
+
+    results_file = Path(results_dir, results_filename)
+
+
+    # Date manipulation
+    # =================
+
+    # form deadline and application period open dates
+    deadline     = datetime.strptime(deadline, '%Y-%m-%d %H:%M')
+
+    # If opening time has been defined, use that. Otherwise make it from
+    # application period length and deadline.
+    if 'opening_time' in locals():
+        opening_time = datetime.strptime(opening_time, '%Y-%m-%d %H:%M')
+    else:
+        # Application period opened application_period_length before the deadline
+        opening_time = deadline - application_period_length
+
+    # Do the magic!!!
+    # ===============
+
+    print("Running lottery!")
+    print("Inventory:    {}".format(inventory_file))
+    print("Applications: {}".format(applications_file))
+    print("Results:      {}".format(results_file))
+    print("")
+
+    lottery(inventory_file, applications_file, results_file, deadline, opening_time)
+
+
+# List of item numbers that are skis
+# ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding',
+# 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
+SKI_INDEX_LIST = [1119, 1120, 1121, 1122, 1123, 1124]
+
+# Last item in the Sjøskrenten container. All snowscooter container stuff is
+# bigger than 1000.
+END_SK_INVENTORY = 999 
+
+def lottery(inventory_file, applications_file, results_file, deadline, opening_time = None):
+    '''Run the lottery
+
+    Arguments:
+    - inventory_file
+    - applications_file
+    - results_file: File to write lottery results to
+    - deadline: Deadline for lottery applications
+    - opening_time: Time when application period was opened. Often the deadline
+      of the previous lottery. Defaults to two weeks before deadline if 'None'
+      is passed.
+    '''
+
+    # FIXME: This function does a lot of stuff still and should be refactored!
+
+    if opening_time is None:
+        opening_time = deadline - timedelta(weeks = 2)
 
     winner_file_ss = 'winner_file_ss.pickle'
     winner_file_sk = 'winner_file_sk.pickle'
 
-    end_sk_inventory = 999 # all ss container stuff is bigger than 1000
-
     # hardcode indices of skis:
-    # ['Fjell skis /w Telemark 3-pin binding', 'Fjell skis /w BC binding', 'Cross country skis', 'Randonee skis', 'Freeride skis', 'Snowboard']
-    ski_ind_list = [1119, 1120, 1121, 1122, 1123, 1124]
+    ski_ind_list = SKI_INDEX_LIST
 
-    # build all the paths to the input and output files
-    today_string = datetime.strftime(datetime.today(), '%Y-%m-%d')
-    result_filename = f'{today_string}_handout.xls'
+    inventory_path    = inventory_file
+    applications_path = applications_file
 
-    inventory_path    = Path(forms_dir, inventory_filename)
-    applications_path = Path(forms_dir, applications_filename)
-
-    result_path       = Path(result_dir, result_filename)
+    result_path       = results_file
 
     for path in [inventory_path, applications_path]:
         if not os.path.isfile(path):
@@ -68,10 +153,8 @@ def main():
     # list it will only find duplicates with both
     applications.drop_duplicates('Name', keep='last', inplace=True)
 
-    ### clean up applications ###
-    # check if applications were submitted in the time frame    
-    deadline = datetime.strptime(deadline, '%Y-%m-%d %H:%M')
-    lasttime = datetime.strptime(last_lottery, '%Y-%m-%d %H:%M')
+
+    lasttime = opening_time 
 
     # Remove the timezone data from the applications, so they can be compared
     # to the deadline
@@ -111,7 +194,7 @@ def main():
             if item not in inventory.index.to_list():
                 pass
             else:
-                if item <= end_sk_inventory:
+                if item <= END_SK_INVENTORY:
                     # if item is already in the list, append the new name
                     if item in want_dict_sk.keys():
                         want_dict_sk[item] = want_dict_sk[item] + [person['Name']]
@@ -156,6 +239,8 @@ def main():
     write_to_excel(['Sjoerskrenten', 'Snowscooter'],
                    [sorted_sk, sorted_ss],
                    result_path)
+
+    result_dir = results_file.parent
 
     # save the winners to pickle
     with open(Path(result_dir, winner_file_ss), 'wb') as fp:
@@ -292,7 +377,7 @@ def make_readable(winners, inventory):
 
 
 def sort_by_name(winner_readable):
-    '''sort winner lists alphabetically'''
+    '''Sort winner lists alphabetically'''
 
     sorted_dict = {}
     for name, items in sorted(winner_readable.items()):
