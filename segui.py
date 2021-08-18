@@ -4,6 +4,7 @@ from tkinter import filedialog
 import datetime as dt
 from pathlib import Path
 import sys
+import os
 
 import lottery
 
@@ -26,9 +27,53 @@ def date_as_string(date):
     '''Returns given date as a string for displaying'''
     return date.strftime("%Y-%m-%d %H:%M")
 
-def lotteryid_suggestion():
+def suggest_lotteryid():
     '''Gives a suggestion for the lottery identifier built from the current week number'''
     return dt.datetime.today().strftime("%Y-W%V")
+
+def suggest_inventory() -> Path:
+    '''Gives a suggestion for the default inventory file
+
+    Checks if DEFAULT_INVENTORY exists and returns that if it does. If this
+    file does not exist, does not suggest anything.
+    '''
+    inv = DEFAULT_INVENTORY
+
+    if inv.exists():
+        return inv
+    else:
+        return Path()
+
+def suggest_applications() -> Path:
+    '''Suggests applications file if one is found
+
+    Checks if there is a file with the word "applications" (case-insensitive)
+    in the lotteries/<lotteryid> directory. If so, this is returned as the
+    applications file suggestion. Lottery id is gotten with
+    suggest_lotteryid(). Otherwise an empty path is returned.
+    '''
+    lotterydir = suggest_resultsdir()
+
+    if lotterydir.exists():
+        ls = os.listdir(lotterydir)
+
+        for filename in ls:
+            if "applications" in filename.lower():
+                return lotterydir / filename
+    else:
+        return Path()
+
+
+def suggest_resultsdir() -> Path:
+    '''Suggests a folder for the results based on the lottery id
+
+    If the DEFAULT_BASE path exists, suggests a folder inside that based on the
+    lottery id from suggest_lotteryid().
+    '''
+    if DEFAULT_BASE.exists():
+        return Path(DEFAULT_BASE, suggest_lotteryid())
+    else:
+        return Path()
 
 class SEGui(tk.Frame):
     # Lottery id
@@ -109,7 +154,6 @@ class SEGui(tk.Frame):
         Calls the lottery function in the lottery module with the paramters
         provided in the GUI.
         '''
-
         print("SEGUI is running the lottery with following parameters:")
 
         inventory = self.get_inventory()
@@ -202,7 +246,6 @@ class SEGui(tk.Frame):
 
         r = r + 1
 
-
         # Run lottery button
         self.btn_run = tk.Button(self.master,
                 text    = "Run lottery!!!!! :D",
@@ -223,8 +266,10 @@ class SEGui(tk.Frame):
         deadline = make_deadline()
         opendate = deadline - APPLICATION_PERIOD
 
-        self.set_lotteryid(lotteryid_suggestion())
-        self.set_inventory(DEFAULT_INVENTORY)
+        self.set_lotteryid(suggest_lotteryid())
+        self.set_inventory(suggest_inventory())
+        self.set_applications(suggest_applications())
+        self.set_resultsdir(suggest_resultsdir())
         self.set_opendate(date_as_string(opendate))
         self.set_deadline(date_as_string(deadline))
 
