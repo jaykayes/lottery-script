@@ -79,7 +79,7 @@ class SEGui(tk.Frame):
     # Lottery id
     def set_lotteryid(self, lotteryid):
         self.ent_lotteryid.delete(0, tk.END)
-        self.ent_lotteryid.insert(0, lotteryid)
+        self.ent_lotteryid.insert(0, str(lotteryid))
 
     def get_lotteryid(self) -> dt.datetime:
         return self.ent_lotteryid.get()
@@ -93,7 +93,7 @@ class SEGui(tk.Frame):
 
     def set_inventory(self, inventory_file):
         self.ent_inventory.delete(0, tk.END)
-        self.ent_inventory.insert(0, inventory_file)
+        self.ent_inventory.insert(0, str(inventory_file))
 
     def get_inventory(self) -> Path:
         '''Returns the chosen inventory file'''
@@ -108,7 +108,7 @@ class SEGui(tk.Frame):
 
     def set_applications(self, applications_file):
         self.ent_applications.delete(0, tk.END)
-        self.ent_applications.insert(0, applications_file)
+        self.ent_applications.insert(0, str(applications_file))
 
     def get_applications(self) -> Path:
         '''Returns the chosen applications file'''
@@ -121,9 +121,9 @@ class SEGui(tk.Frame):
         if file:
             self.set_resultsdir(file)
 
-    def set_resultsdir(self, applications_file):
+    def set_resultsdir(self, resultsdir):
         self.ent_resultsdir.delete(0, tk.END)
-        self.ent_resultsdir.insert(0, applications_file)
+        self.ent_resultsdir.insert(0, str(resultsdir))
 
     def get_resultsdir(self) -> Path:
         '''Returns the chosen applications file'''
